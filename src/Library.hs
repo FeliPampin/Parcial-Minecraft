@@ -60,17 +60,19 @@ sueter = "sueter"
 steve :: Personaje
 steve = UnPersonaje "Steve" 100 [madera, fosforo, pollo]
 
-intentarCraftear :: Receta -> Personaje -> [Material]
+intentarCraftear :: Receta -> Personaje -> Personaje
 intentarCraftear receta personaje
     | intersect (materiales receta) (inventario personaje) == materiales receta = craftear receta personaje
-    | otherwise = (inventario personaje)
+    | otherwise = personaje {puntaje = puntaje personaje - 100}
 
-craftear :: Receta -> Personaje -> [Material]
-craftear receta personaje = agregarElementoCrafteado (nombreReceta receta) (eliminarMaterialesDeInventario (materiales receta) (inventario personaje))
+craftear :: Receta -> Personaje -> Personaje
+craftear receta personaje = cambiarPuntaje (agregarElementoCrafteado (nombreReceta receta) (eliminarMaterialesDeInventario (materiales receta) (inventario personaje)) personaje) receta
+
+cambiarPuntaje :: Personaje -> Receta -> Personaje
+cambiarPuntaje personaje receta = personaje {puntaje = puntaje personaje + ((tiempo receta)* 10)}
 
 eliminarMaterialesDeInventario :: [Material] -> [Material] -> [Material]
 eliminarMaterialesDeInventario [] inventarios = inventarios
-eliminarMaterialesDeInventario (elemento:[]) inventarios = verificarSiEliminar elemento inventarios
 eliminarMaterialesDeInventario (elemento:siguiente) inventarios = eliminarMaterialesDeInventario (verificarSiEliminar elemento inventarios) siguiente
 
 verificarSiEliminar :: Material -> [Material] -> [Material]
@@ -79,5 +81,5 @@ verificarSiEliminar elemento (elem:siguiente)
     | elem == elemento = verificarSiEliminar elemento siguiente
     | otherwise = elem : verificarSiEliminar elemento siguiente
 
-agregarElementoCrafteado :: Material -> [Material] -> [Material]
-agregarElementoCrafteado elemento inventarios = elemento : inventarios
+agregarElementoCrafteado :: Material -> [Material] -> Personaje -> Personaje
+agregarElementoCrafteado elemento inventarios personaje = personaje {inventario = elemento : inventarios}
