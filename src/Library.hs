@@ -66,20 +66,26 @@ intentarCraftear receta personaje
     | otherwise = personaje {puntaje = puntaje personaje - 100}
 
 craftear :: Receta -> Personaje -> Personaje
-craftear receta personaje = cambiarPuntaje (agregarElementoCrafteado (nombreReceta receta) (eliminarMaterialesDeInventario (materiales receta) (inventario personaje)) personaje) receta
+craftear receta = cambiarPuntaje receta . agregarElementoCrafteado (nombreReceta receta) . eliminarMaterialesDeInventario receta
 
-cambiarPuntaje :: Personaje -> Receta -> Personaje
-cambiarPuntaje personaje receta = personaje {puntaje = puntaje personaje + ((tiempo receta)* 10)}
+cambiarPuntaje :: Receta -> Personaje -> Personaje
+cambiarPuntaje receta personaje = personaje {puntaje = puntaje personaje + (tiempo receta* 10)}
 
-eliminarMaterialesDeInventario :: [Material] -> [Material] -> [Material]
-eliminarMaterialesDeInventario [] inventarios = inventarios
-eliminarMaterialesDeInventario (elemento:siguiente) inventarios = eliminarMaterialesDeInventario (verificarSiEliminar elemento inventarios) siguiente
+eliminarMaterialesDeInventario :: Receta -> Personaje -> Personaje
+eliminarMaterialesDeInventario receta personaje = personaje {inventario = eliminarMaterialesDeInventarioAux (materiales receta) personaje}
 
-verificarSiEliminar :: Material -> [Material] -> [Material]
-verificarSiEliminar _ [] = []
-verificarSiEliminar elemento (elem:siguiente)
-    | elem == elemento = verificarSiEliminar elemento siguiente
-    | otherwise = elem : verificarSiEliminar elemento siguiente
+eliminarMaterialesDeInventarioAux :: [Material] -> Personaje -> [Material]
+eliminarMaterialesDeInventarioAux [] personaje = inventario personaje
+eliminarMaterialesDeInventarioAux (elemento:siguiente) personaje = eliminarMaterialesDeInventarioAux siguiente (verificarSiEliminar elemento personaje)
 
-agregarElementoCrafteado :: Material -> [Material] -> Personaje -> Personaje
-agregarElementoCrafteado elemento inventarios personaje = personaje {inventario = elemento : inventarios}
+verificarSiEliminar :: Material -> Personaje -> Personaje
+verificarSiEliminar material personaje = personaje {inventario = verificarSiEliminarAux material (inventario personaje)}
+
+verificarSiEliminarAux :: Material -> [Material] -> [Material]
+verificarSiEliminarAux _ [] = []
+verificarSiEliminarAux elemento (elem:siguiente)
+    | elem == elemento = verificarSiEliminarAux elemento siguiente
+    | otherwise = elem : verificarSiEliminarAux elemento siguiente
+
+agregarElementoCrafteado :: Material -> Personaje -> Personaje
+agregarElementoCrafteado material personaje = personaje {inventario = material : inventario personaje}
