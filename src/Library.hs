@@ -18,7 +18,7 @@ data Receta = UnaReceta {
     materiales :: [Material],
     tiempo :: Number
 
-}
+} deriving Show
 
 
 recetaFogata :: Receta
@@ -58,18 +58,18 @@ sueter :: Material
 sueter = "sueter"
 
 steve :: Personaje
-steve = UnPersonaje "Steve" 100 [madera, fosforo, pollo]
+steve = UnPersonaje "Steve" 100 [madera, fosforo, pollo, lana, agujas, tintura]
 
-intentarCraftear :: Receta -> Personaje -> Personaje
-intentarCraftear receta personaje
+listaRecetas1 :: [Receta]
+listaRecetas1 = [recetaFogata, recetaPolloAsado, recetaSueter]
+
+intentarCraftear :: Personaje -> Receta -> Personaje
+intentarCraftear personaje receta
     | intersect (materiales receta) (inventario personaje) == materiales receta = craftear receta personaje
     | otherwise = personaje {puntaje = puntaje personaje - 100}
 
 craftear :: Receta -> Personaje -> Personaje
 craftear receta = cambiarPuntaje receta . agregarElementoCrafteado (nombreReceta receta) . eliminarMaterialesDeInventario receta
-
-cambiarPuntaje :: Receta -> Personaje -> Personaje
-cambiarPuntaje receta personaje = personaje {puntaje = puntaje personaje + (tiempo receta* 10)}
 
 eliminarMaterialesDeInventario :: Receta -> Personaje -> Personaje
 eliminarMaterialesDeInventario receta personaje = personaje {inventario = eliminarMaterialesDeInventarioAux (materiales receta) personaje}
@@ -77,6 +77,12 @@ eliminarMaterialesDeInventario receta personaje = personaje {inventario = elimin
 eliminarMaterialesDeInventarioAux :: [Material] -> Personaje -> [Material]
 eliminarMaterialesDeInventarioAux [] personaje = inventario personaje
 eliminarMaterialesDeInventarioAux (elemento:siguiente) personaje = eliminarMaterialesDeInventarioAux siguiente (verificarSiEliminar elemento personaje)
+
+agregarElementoCrafteado :: Material -> Personaje -> Personaje
+agregarElementoCrafteado material personaje = personaje {inventario = material : inventario personaje}
+
+cambiarPuntaje :: Receta -> Personaje -> Personaje
+cambiarPuntaje receta personaje = personaje {puntaje = puntaje personaje + (tiempo receta* 10)}
 
 verificarSiEliminar :: Material -> Personaje -> Personaje
 verificarSiEliminar material personaje = personaje {inventario = verificarSiEliminarAux material (inventario personaje)}
@@ -87,5 +93,27 @@ verificarSiEliminarAux elemento (elem:siguiente)
     | elem == elemento = verificarSiEliminarAux elemento siguiente
     | otherwise = elem : verificarSiEliminarAux elemento siguiente
 
-agregarElementoCrafteado :: Material -> Personaje -> Personaje
-agregarElementoCrafteado material personaje = personaje {inventario = material : inventario personaje}
+cualesPuedeCraftear :: Personaje -> [Receta] -> [Receta]
+cualesPuedeCraftear personaje = filter (encontrarPosiblesRecetas personaje)
+
+encontrarPosiblesRecetas :: Personaje -> Receta -> Bool
+encontrarPosiblesRecetas personaje receta = verificarSiPuedeCraftear personaje receta && verificarSiDuplicaPuntaje personaje receta
+
+verificarSiDuplicaPuntaje :: Personaje -> Receta -> Bool
+verificarSiDuplicaPuntaje personaje receta = puntaje (intentarCraftear personaje receta) >= puntaje personaje * 2
+
+verificarSiPuedeCraftear :: Personaje -> Receta -> Bool
+verificarSiPuedeCraftear personaje receta = inventario (intentarCraftear personaje receta) /= inventario personaje
+
+aplicarRecetasSucesivamente :: Personaje -> [Receta] -> Personaje
+aplicarRecetasSucesivamente = foldl intentarCraftear
+
+aplicarRecetasSucesivamenteAlReves :: Personaje -> [Receta] -> Personaje
+aplicarRecetasSucesivamenteAlReves = foldr (flip intentarCraftear)
+
+quedaConMasPuntosEnOrden :: Personaje -> [Receta] -> Bool 
+quedaConMasPuntosEnOrden personaje recetas = puntaje (aplicarRecetasSucesivamente personaje recetas) > puntaje (aplicarRecetasSucesivamenteAlReves personaje recetas)
+
+quedaConMasPuntosAlReves :: Personaje -> [Receta] -> Bool
+quedaConMasPuntosAlReves personaje recetas = puntaje (aplicarRecetasSucesivamente personaje recetas) < puntaje (aplicarRecetasSucesivamenteAlReves personaje recetas)
+
