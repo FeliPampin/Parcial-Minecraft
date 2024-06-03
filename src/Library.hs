@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Eta reduce" #-}
 module Library where
 import PdePreludat
 import Data.List (intersect)
@@ -58,10 +60,12 @@ sueter :: Material
 sueter = "sueter"
 
 steve :: Personaje
-steve = UnPersonaje "Steve" 100 [madera, fosforo, pollo, lana, agujas, tintura]
+steve = UnPersonaje "Steve" 100 [sueter, lana]
 
 listaRecetas1 :: [Receta]
 listaRecetas1 = [recetaFogata, recetaPolloAsado, recetaSueter]
+
+-- Craft
 
 intentarCraftear :: Personaje -> Receta -> Personaje
 intentarCraftear personaje receta
@@ -69,7 +73,7 @@ intentarCraftear personaje receta
     | otherwise = personaje {puntaje = puntaje personaje - 100}
 
 craftear :: Receta -> Personaje -> Personaje
-craftear receta = cambiarPuntaje receta . agregarElementoCrafteado (nombreReceta receta) . eliminarMaterialesDeInventario receta
+craftear receta = cambiarPuntaje receta . agregarElementoAInventario (nombreReceta receta) . eliminarMaterialesDeInventario receta
 
 eliminarMaterialesDeInventario :: Receta -> Personaje -> Personaje
 eliminarMaterialesDeInventario receta personaje = personaje {inventario = eliminarMaterialesDeInventarioAux (materiales receta) personaje}
@@ -78,8 +82,8 @@ eliminarMaterialesDeInventarioAux :: [Material] -> Personaje -> [Material]
 eliminarMaterialesDeInventarioAux [] personaje = inventario personaje
 eliminarMaterialesDeInventarioAux (elemento:siguiente) personaje = eliminarMaterialesDeInventarioAux siguiente (verificarSiEliminar elemento personaje)
 
-agregarElementoCrafteado :: Material -> Personaje -> Personaje
-agregarElementoCrafteado material personaje = personaje {inventario = material : inventario personaje}
+agregarElementoAInventario :: Material -> Personaje -> Personaje
+agregarElementoAInventario material personaje = personaje {inventario = material : inventario personaje}
 
 cambiarPuntaje :: Receta -> Personaje -> Personaje
 cambiarPuntaje receta personaje = personaje {puntaje = puntaje personaje + (tiempo receta* 10)}
@@ -111,9 +115,63 @@ aplicarRecetasSucesivamente = foldl intentarCraftear
 aplicarRecetasSucesivamenteAlReves :: Personaje -> [Receta] -> Personaje
 aplicarRecetasSucesivamenteAlReves = foldr (flip intentarCraftear)
 
-quedaConMasPuntosEnOrden :: Personaje -> [Receta] -> Bool 
+quedaConMasPuntosEnOrden :: Personaje -> [Receta] -> Bool
 quedaConMasPuntosEnOrden personaje recetas = puntaje (aplicarRecetasSucesivamente personaje recetas) > puntaje (aplicarRecetasSucesivamenteAlReves personaje recetas)
 
 quedaConMasPuntosAlReves :: Personaje -> [Receta] -> Bool
 quedaConMasPuntosAlReves personaje recetas = puntaje (aplicarRecetasSucesivamente personaje recetas) < puntaje (aplicarRecetasSucesivamenteAlReves personaje recetas)
+
+-- Mine
+
+data Bioma = UnBioma {
+    nombreBioma :: String,
+    elementos :: [Material],
+    elementoNecesario :: Material
+}
+
+type Herramienta = [Material] -> Number -> Material
+
+hielo :: Material
+hielo = "Hielo"
+
+iglues :: Material
+iglues = "Iglues"
+
+lobos :: Material
+lobos = "lobos"
+
+artico :: Bioma
+artico = UnBioma "Artico" [hielo, iglues, lobos] sueter
+
+hacha :: Herramienta
+hacha materiales _ = last materiales
+
+espada :: Herramienta
+espada materiales _ = head materiales
+
+pico :: Herramienta
+pico = (!!)
+
+intentarMinar :: Personaje -> Bioma -> Herramienta -> Number -> Personaje
+intentarMinar personaje bioma herramienta num
+    | cuentaConElementos personaje bioma = minar personaje bioma herramienta num
+    | otherwise = personaje
+
+cuentaConElementos :: Personaje -> Bioma -> Bool
+cuentaConElementos personaje bioma = any (esIgualAElementoNecesario bioma) (inventario personaje)
+
+esIgualAElementoNecesario :: Bioma -> Material -> Bool
+esIgualAElementoNecesario bioma material = elementoNecesario bioma == material
+
+minar :: Personaje -> Bioma -> ([Material] -> Number -> Material) -> Number -> Personaje
+--minar personaje bioma herramienta num = sumarPuntos . flip agregarElementoAInventario personaje . obtenerMaterialMinado bioma herramienta num
+minar personaje bioma herramienta num = sumarPuntos . flip agregarElementoAInventario personaje . obtenerMaterialMinado bioma herramienta $ num
+
+obtenerMaterialMinado :: Bioma -> ([Material] -> Number -> Material) -> Number -> Material
+obtenerMaterialMinado bioma herramienta num = herramienta (elementos bioma) num
+
+sumarPuntos :: Personaje -> Personaje
+sumarPuntos personaje = personaje {puntaje = puntaje personaje + 50}
+
+-- Herramientas punto 2
 
