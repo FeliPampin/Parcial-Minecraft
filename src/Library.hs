@@ -127,7 +127,7 @@ data Bioma = UnBioma {
     nombreBioma :: String,
     elementos :: [Material],
     elementoNecesario :: Material
-}
+} deriving Show
 
 type Herramienta = [Material] -> Number -> Material
 
@@ -142,6 +142,16 @@ lobos = "lobos"
 
 artico :: Bioma
 artico = UnBioma "Artico" [hielo, iglues, lobos] sueter
+
+desierto :: Bioma
+desierto = UnBioma "Desierto" [arena, sal, agua, mar, olas] sueter
+
+arena, sal, agua, mar, olas :: Material
+arena   = "Arena"
+sal     = "Sal"
+agua    = "agua"
+mar     = "mar"
+olas    = "olas"
 
 hacha :: Herramienta
 hacha materiales _ = last materiales
@@ -164,7 +174,6 @@ esIgualAElementoNecesario :: Bioma -> Material -> Bool
 esIgualAElementoNecesario bioma material = elementoNecesario bioma == material
 
 minar :: Personaje -> Bioma -> ([Material] -> Number -> Material) -> Number -> Personaje
---minar personaje bioma herramienta num = sumarPuntos . flip agregarElementoAInventario personaje . obtenerMaterialMinado bioma herramienta num
 minar personaje bioma herramienta num = sumarPuntos . flip agregarElementoAInventario personaje . obtenerMaterialMinado bioma herramienta $ num
 
 obtenerMaterialMinado :: Bioma -> ([Material] -> Number -> Material) -> Number -> Material
@@ -175,3 +184,14 @@ sumarPuntos personaje = personaje {puntaje = puntaje personaje + 50}
 
 -- Herramientas punto 2
 
+pala :: Herramienta
+pala materiales _ = pico materiales . (`div` 2) $ length materiales
+
+--manos :: Herramienta
+--manos materiales _ = \x -> 
+
+devolverBioma :: Bioma -> Bioma 
+devolverBioma bioma = bioma {elementos = agregarMaterialABioma agua}
+
+agregarMaterialABioma :: Material -> [Material]
+agregarMaterialABioma material = material : agregarMaterialABioma material
